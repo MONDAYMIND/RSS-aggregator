@@ -6,3 +6,4 @@
 [![Maintainability](https://api.codeclimate.com/v1/badges/07659c415f6300a98e9e/maintainability)](https://codeclimate.com/github/MONDAYMIND/frontend-project-lvl3/maintainability)
 
 ## RSS:
+**[link to the website](https://frontend-project-lvl33.vercel.app/)**

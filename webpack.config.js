@@ -3,7 +3,7 @@ import HtmlWebpackPlugin from 'html-webpack-plugin';
 const isProduction = process.env.NODE_ENV === 'production';
 
 const config = {
-  entry: './src/index.js',
+  entry: '/src/index.js',
   output: {
     filename: 'index.js',
   },
@@ -19,12 +19,12 @@ const config = {
   module: {
     rules: [
       {
-        test: /\.(js|jsx)$/i,
-        loader: 'babel-loader',
-      },
-      {
         test: /\.(eot|svg|ttf|woff|woff2|png|jpg|gif)$/i,
         type: 'asset',
+      },
+      {
+        test: /\.scss$/,
+        use: ['style-loader', 'css-loader', 'sass-loader', 'postcss-loader'],
       },
       {
         test: /\.css$/,
