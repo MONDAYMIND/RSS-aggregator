@@ -8,10 +8,8 @@ const renderProcessState = (elements, processState, i18nextInstance) => {
       break;
 
     case 'processed':
-      elements.statusParagraph.classList.remove('text-danger');
       elements.statusParagraph.classList.add('text-success');
       elements.input.removeAttribute('readonly');
-      elements.input.classList.remove('is-invalid');
       elements.submitButton.removeAttribute('disabled');
       elements.statusParagraph.textContent = i18nextInstance.t('urlLoaded');
       elements.form.reset();
@@ -24,6 +22,7 @@ const renderProcessState = (elements, processState, i18nextInstance) => {
 };
 
 const renderFeeds = (elements, feeds, i18nextInstance) => {
+  elements.feedsContainer.innerHTML = '';
   elements.feedsContainer.innerHTML = `<div class="card border-0">
   <div class="card-body"><h2 class="card-title h4">${i18nextInstance.t('feeds')}</h2></div>
   <ul class="list-group border-0 rounded-0"></ul></div>`;
@@ -48,6 +47,7 @@ const renderFeeds = (elements, feeds, i18nextInstance) => {
 };
 
 const renderPosts = (elements, posts, i18nextInstance) => {
+  elements.postsContainer.innerHTML = '';
   elements.postsContainer.innerHTML = `<div class="card border-0">
     <div class="card-body"><h2 class="card-title h4">${i18nextInstance.t('posts')}</h2></div>
     <ul class="list-group border-0 rounded-0"></ul></div>`;
@@ -62,13 +62,13 @@ const renderPosts = (elements, posts, i18nextInstance) => {
     linkElement.setAttribute('href', post.link);
     linkElement.setAttribute('data-id', post.id);
     linkElement.setAttribute('target', '_blank');
-    linkElement.setAttribute('rel', 'noopener; noreferrer');
+    linkElement.setAttribute('rel', 'noopener noreferrer');
     linkElement.textContent = post.title;
     liElement.append(linkElement);
 
     const button = document.createElement('button');
     button.classList.add('btn', 'btn-outline-primary', 'btn-sm');
-    button.setAttribute('type', button);
+    button.setAttribute('type', 'button');
     button.setAttribute('data-id', post.id);
     button.setAttribute('data-bs-toggle', 'modal');
     button.setAttribute('data-bs-target', '#modal');
@@ -80,10 +80,27 @@ const renderPosts = (elements, posts, i18nextInstance) => {
 };
 
 const renderErrors = (elements, error) => {
-  elements.statusParagraph.classList.add('text-danger');
-  elements.statusParagraph.classList.remove('text-success');
-  elements.input.classList.add('is-invalid');
-  elements.statusParagraph.textContent = error;
+  switch (error) {
+    case null:
+      elements.statusParagraph.classList.remove('text-danger');
+      elements.input.classList.remove('is-invalid');
+      break;
+
+    default:
+      elements.statusParagraph.classList.add('text-danger');
+      elements.statusParagraph.classList.remove('text-success');
+      elements.input.classList.add('is-invalid');
+      elements.statusParagraph.textContent = error;
+      break;
+  }
+};
+
+const renderViewedPost = (viewedPosts) => {
+  viewedPosts.map((viewedPost) => {
+    viewedPost.headlingElement.classList.add('fw-normal', 'link-secondary');
+    viewedPost.headlingElement.classList.remove('fw-bold');
+    return viewedPost;
+  });
 };
 
 const render = (elements, i18nextInstance) => (path, value) => {
@@ -102,6 +119,10 @@ const render = (elements, i18nextInstance) => (path, value) => {
 
     case 'form.loadedPosts':
       renderPosts(elements, value, i18nextInstance);
+      break;
+
+    case 'uiState.viewedPosts':
+      renderViewedPost(value);
       break;
 
     default:

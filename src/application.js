@@ -8,6 +8,42 @@ import validate from './validator.js';
 import resources from './locales/index.js';
 import domParser from './domParser.js';
 
+const parse = (response, watchedState, url) => {
+  const parsedData = domParser(response.data.contents);
+  const newFeed = {
+    id: _.uniqueId(),
+    title: parsedData.querySelector('title').textContent,
+    description: parsedData.querySelector('description').textContent,
+    link: url,
+  };
+
+  if (!watchedState.form.loadedLinks.includes(url)) {
+    watchedState.form.loadedFeeds.push(newFeed);
+  }
+
+  const items = parsedData.querySelectorAll('item');
+  const loadedPostsLinks = watchedState.form.loadedPosts.map((post) => post.link);
+  Array.from(items).map((item) => {
+    const newPost = {
+      id: _.uniqueId(),
+      title: item.querySelector('title').textContent,
+      description: item.querySelector('description').textContent,
+      link: item.querySelector('link').nextSibling.textContent.trim(),
+    };
+    if (!loadedPostsLinks.includes(newPost.link)) {
+      watchedState.form.loadedPosts.push(newPost);
+    }
+    return newPost;
+  });
+
+  setTimeout(() => {
+    watchedState.form.loadedLinks.map((loadedLink) => axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(loadedLink)}`)
+      .then((newResponse) => parse(newResponse, watchedState, url)));
+  }, 5000);
+
+  return 'All is rendered';
+};
+
 export default () => {
   const elements = {
     formContainer: document.querySelector('.container-fluid'),
@@ -31,6 +67,9 @@ export default () => {
       loadedPosts: [],
       value: null,
     },
+    uiState: {
+      viewedPosts: [],
+    },
   };
 
   const i18nextInstance = i18next.createInstance();
@@ -43,7 +82,6 @@ export default () => {
       const watchedState = onChange(state, render(elements, i18nextInstance));
       elements.form.addEventListener('submit', (e) => {
         e.preventDefault();
-
         const { value } = elements.input;
         const { loadedLinks } = state.form;
         return validate(value, loadedLinks)
@@ -55,47 +93,31 @@ export default () => {
           })
           .then((validUrl) => {
             watchedState.form.value = validUrl;
+            watchedState.form.loadedLinks.push(validUrl);
             watchedState.form.valid = true;
+            watchedState.form.error = null;
             watchedState.form.processState = 'sending';
             return validUrl;
           })
-          .then(() => {
-            const url = watchedState.form.value;
-            const id = setInterval(() => axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`), 5000);
-            return id;
-          })
-          .then((response) => domParser(response.data.contents))
-          .then((parsedData) => {
-            console.log(parsedData);
-            const link = parsedData.querySelector('link').nextSibling.textContent.trim();
-            const newFeed = {
-              id: _.uniqueId(),
-              title: parsedData.querySelector('title').textContent,
-              description: parsedData.querySelector('description').textContent,
-              link,
-            };
-            watchedState.form.loadedLinks.push(watchedState.form.value);
-            watchedState.form.loadedFeeds.push(newFeed);
-
-            const items = parsedData.querySelectorAll('item');
-            Array.from(items).map((item) => {
-              const newPost = {
-                id: _.uniqueId(),
-                title: item.querySelector('title').textContent,
-                description: item.querySelector('description').textContent,
-                link: item.querySelector('link').nextSibling.textContent.trim(),
-              };
-              watchedState.form.loadedPosts.push(newPost);
-              return newPost;
-            });
-            return parsedData;
-          })
-          .then(() => {
-            watchedState.form.error = '';
+          .then((validUrl) => axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(validUrl)}`))
+          .then((response) => parse(response, watchedState, watchedState.form.value))
+          .then((result) => {
             watchedState.form.processState = 'processed';
+            return result;
+          })
+          .then(() => {
+            const modalButtons = document.querySelectorAll('[data-bs-toggle="modal"]');
+            modalButtons.forEach((button) => {
+              button.addEventListener('click', (event) => {
+                const headlingElement = event.target.previousSibling;
+                const viewedPost = {
+                  id: headlingElement.dataset.id,
+                  headlingElement,
+                };
+                watchedState.uiState.viewedPosts.push(viewedPost);
+              });
+            });
           });
       });
     });
-
-  // return controllers;
 };
