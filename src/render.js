@@ -79,15 +79,26 @@ const renderPosts = (elements, posts, i18nextInstance) => {
   });
 };
 
-const renderErrors = (elements, error) => {
+const renderErrors = (elements, error, i18nextInstance) => {
   switch (error) {
     case null:
       elements.statusParagraph.classList.remove('text-danger');
       elements.input.classList.remove('is-invalid');
       break;
 
+    case 404:
+      elements.statusParagraph.classList.add('text-danger');
+      elements.input.removeAttribute('readonly');
+      elements.submitButton.removeAttribute('disabled');
+      elements.statusParagraph.classList.remove('text-success');
+      elements.input.classList.add('is-invalid');
+      elements.statusParagraph.textContent = i18nextInstance.t('networkError');
+      break;
+
     default:
       elements.statusParagraph.classList.add('text-danger');
+      elements.input.removeAttribute('readonly');
+      elements.submitButton.removeAttribute('disabled');
       elements.statusParagraph.classList.remove('text-success');
       elements.input.classList.add('is-invalid');
       elements.statusParagraph.textContent = error;
@@ -103,14 +114,30 @@ const renderViewedPost = (viewedPosts) => {
   });
 };
 
-const render = (elements, i18nextInstance) => (path, value) => {
+const renderModal = (currentModalId, state) => {
+  const [currentPost] = state.form.loadedPosts
+    .filter((loadedPost) => loadedPost.id === currentModalId);
+  const { title } = currentPost;
+  const { description } = currentPost;
+  const { link } = currentPost;
+
+  const modalTitle = document.querySelector('.modal-title');
+  modalTitle.textContent = title;
+  const modalBody = document.querySelector('.modal-body');
+  modalBody.textContent = description;
+  const modalFooter = document.querySelector('.modal-footer');
+  const modalFooterLink = modalFooter.querySelector('a');
+  modalFooterLink.setAttribute('href', link);
+};
+
+const render = (elements, i18nextInstance, state) => (path, value) => {
   switch (path) {
     case 'form.processState':
       renderProcessState(elements, value, i18nextInstance);
       break;
 
     case 'form.error':
-      renderErrors(elements, value);
+      renderErrors(elements, value, i18nextInstance);
       break;
 
     case 'form.loadedFeeds':
@@ -123,6 +150,10 @@ const render = (elements, i18nextInstance) => (path, value) => {
 
     case 'uiState.viewedPosts':
       renderViewedPost(value);
+      break;
+
+    case 'uiState.currentModalId':
+      renderModal(value, state);
       break;
 
     default:

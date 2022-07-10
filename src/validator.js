@@ -6,6 +6,7 @@ setLocale({
     notOneOf: 'RSS уже существует',
   },
   string: {
+    required: 'Не должно быть пустым',
     url: 'Ссылка должна быть валидным URL',
   },
 });

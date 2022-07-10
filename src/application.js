@@ -10,14 +10,14 @@ import domParser from './domParser.js';
 
 const parse = (response, watchedState, url) => {
   const parsedData = domParser(response.data.contents);
-  const newFeed = {
-    id: _.uniqueId(),
-    title: parsedData.querySelector('title').textContent,
-    description: parsedData.querySelector('description').textContent,
-    link: url,
-  };
-
-  if (!watchedState.form.loadedLinks.includes(url)) {
+  const loadedFeedsUrl = watchedState.form.loadedFeeds.map((feed) => feed.link);
+  if (!loadedFeedsUrl.includes(url)) {
+    const newFeed = {
+      id: _.uniqueId(),
+      title: parsedData.querySelector('title').textContent,
+      description: parsedData.querySelector('description').textContent,
+      link: url,
+    };
     watchedState.form.loadedFeeds.push(newFeed);
   }
 
@@ -69,6 +69,7 @@ export default () => {
     },
     uiState: {
       viewedPosts: [],
+      currentModalId: null,
     },
   };
 
@@ -79,28 +80,36 @@ export default () => {
     resources,
   })
     .then(() => {
-      const watchedState = onChange(state, render(elements, i18nextInstance));
+      const watchedState = onChange(state, render(elements, i18nextInstance, state));
       elements.form.addEventListener('submit', (e) => {
         e.preventDefault();
         const { value } = elements.input;
         const { loadedLinks } = state.form;
         return validate(value, loadedLinks)
-          .catch((err) => {
-            watchedState.form.valid = false;
-            watchedState.form.processState = 'failed';
-            watchedState.form.error = err;
-            throw new Error(err);
-          })
           .then((validUrl) => {
             watchedState.form.value = validUrl;
-            watchedState.form.loadedLinks.push(validUrl);
-            watchedState.form.valid = true;
-            watchedState.form.error = null;
             watchedState.form.processState = 'sending';
             return validUrl;
           })
           .then((validUrl) => axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(validUrl)}`))
-          .then((response) => parse(response, watchedState, watchedState.form.value))
+          .catch((err) => {
+            watchedState.form.valid = false;
+            watchedState.form.processState = 'failed';
+            watchedState.form.error = 404;
+            throw new Error(err);
+          })
+          .then((response) => {
+            if (!response.data.status.content_type.includes('application/rss+xml')) {
+              const error = i18nextInstance.t('notValidRss');
+              watchedState.form.error = error;
+              throw new Error(error);
+            } else {
+              watchedState.form.loadedLinks.push(watchedState.form.value);
+              watchedState.form.valid = true;
+              watchedState.form.error = null;
+              return parse(response, watchedState, watchedState.form.value);
+            }
+          })
           .then((result) => {
             watchedState.form.processState = 'processed';
             return result;
@@ -109,6 +118,7 @@ export default () => {
             const modalButtons = document.querySelectorAll('[data-bs-toggle="modal"]');
             modalButtons.forEach((button) => {
               button.addEventListener('click', (event) => {
+                watchedState.uiState.currentModalId = event.target.dataset.id;
                 const headlingElement = event.target.previousSibling;
                 const viewedPost = {
                   id: headlingElement.dataset.id,
