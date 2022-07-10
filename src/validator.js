@@ -18,6 +18,6 @@ export default (value, loadedFeeds) => {
   return schema.validate(value)
     .then(() => value)
     .catch((err) => {
-      throw err.message;
+      throw err;
     });
 };

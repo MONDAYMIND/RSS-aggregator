@@ -80,29 +80,29 @@ const renderPosts = (elements, posts, i18nextInstance) => {
 };
 
 const renderErrors = (elements, error, i18nextInstance) => {
-  switch (error) {
-    case null:
-      elements.statusParagraph.classList.remove('text-danger');
-      elements.input.classList.remove('is-invalid');
-      break;
+  if (error === null) {
+    elements.statusParagraph.classList.remove('text-danger');
+    elements.input.classList.remove('is-invalid');
+  } else {
+    switch (error.message) {
+      case 'Network Error':
+        elements.statusParagraph.classList.add('text-danger');
+        elements.input.removeAttribute('readonly');
+        elements.submitButton.removeAttribute('disabled');
+        elements.statusParagraph.classList.remove('text-success');
+        elements.input.classList.add('is-invalid');
+        elements.statusParagraph.textContent = i18nextInstance.t('networkError');
+        break;
 
-    case 404:
-      elements.statusParagraph.classList.add('text-danger');
-      elements.input.removeAttribute('readonly');
-      elements.submitButton.removeAttribute('disabled');
-      elements.statusParagraph.classList.remove('text-success');
-      elements.input.classList.add('is-invalid');
-      elements.statusParagraph.textContent = i18nextInstance.t('networkError');
-      break;
-
-    default:
-      elements.statusParagraph.classList.add('text-danger');
-      elements.input.removeAttribute('readonly');
-      elements.submitButton.removeAttribute('disabled');
-      elements.statusParagraph.classList.remove('text-success');
-      elements.input.classList.add('is-invalid');
-      elements.statusParagraph.textContent = error;
-      break;
+      default:
+        elements.statusParagraph.classList.add('text-danger');
+        elements.input.removeAttribute('readonly');
+        elements.submitButton.removeAttribute('disabled');
+        elements.statusParagraph.classList.remove('text-success');
+        elements.input.classList.add('is-invalid');
+        elements.statusParagraph.textContent = error.message;
+        break;
+    }
   }
 };
 

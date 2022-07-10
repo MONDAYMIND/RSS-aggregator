@@ -95,7 +95,7 @@ export default () => {
           .catch((err) => {
             watchedState.form.valid = false;
             watchedState.form.processState = 'failed';
-            watchedState.form.error = 404;
+            watchedState.form.error = err;
             throw new Error(err);
           })
           .then((response) => {
