@@ -95,7 +95,7 @@ const renderErrors = (elements, error, i18nextInstance) => {
         elements.statusParagraph.textContent = i18nextInstance.t('invalidRss');
         break;
 
-      case 'NetworkError':
+      case 'Network Error':
         elements.statusParagraph.textContent = i18nextInstance.t('networkError');
         break;
 

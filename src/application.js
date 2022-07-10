@@ -117,8 +117,10 @@ export default () => {
           .catch((err) => {
             watchedState.form.valid = false;
             watchedState.form.processState = 'failed';
-            if (err.name === 'TypeError' || err.name === 'NetworkError') {
+            if (err.name === 'TypeError') {
               watchedState.form.error = err.name;
+            } else if (err.message === 'Network Error') {
+              watchedState.form.error = err.message;
             } else {
               watchedState.form.error = err;
             }
