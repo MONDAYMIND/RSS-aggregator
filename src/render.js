@@ -16,8 +16,12 @@ const renderProcessState = (elements, processState, i18nextInstance) => {
       elements.input.focus();
       break;
 
-    default:
+    case 'filling':
+    case 'failed':
       break;
+
+    default:
+      throw new Error(`Unknown state: '${processState}'!`);
   }
 };
 
@@ -91,7 +95,15 @@ const renderErrors = (elements, error, i18nextInstance) => {
     elements.input.classList.add('is-invalid');
 
     switch (error) {
-      case 'TypeError':
+      case 'url':
+        elements.statusParagraph.textContent = i18nextInstance.t('invalidUrl');
+        break;
+
+      case 'notOneOf':
+        elements.statusParagraph.textContent = i18nextInstance.t('notOneOf');
+        break;
+
+      case 'Type Error':
         elements.statusParagraph.textContent = i18nextInstance.t('invalidRss');
         break;
 
@@ -100,8 +112,7 @@ const renderErrors = (elements, error, i18nextInstance) => {
         break;
 
       default:
-        elements.statusParagraph.textContent = error.message;
-        break;
+        throw new Error(`Unknown error type: '${error}'!`);
     }
   }
 };

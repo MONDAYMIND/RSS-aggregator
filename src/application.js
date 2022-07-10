@@ -118,11 +118,11 @@ export default () => {
             watchedState.form.valid = false;
             watchedState.form.processState = 'failed';
             if (err.name === 'TypeError') {
-              watchedState.form.error = err.name;
+              watchedState.form.error = 'Type Error';
             } else if (err.message === 'Network Error') {
-              watchedState.form.error = err.message;
+              watchedState.form.error = 'Network Error';
             } else {
-              watchedState.form.error = err;
+              watchedState.form.error = err.type;
             }
           });
       });
