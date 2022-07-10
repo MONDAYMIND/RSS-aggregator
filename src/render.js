@@ -55,7 +55,7 @@ const renderPosts = (elements, posts, i18nextInstance) => {
   posts.map((post) => {
     const liElement = document.createElement('li');
     liElement.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
-    ulElement.prepend(liElement);
+    ulElement.append(liElement);
 
     const linkElement = document.createElement('a');
     linkElement.classList.add('fw-bold');
