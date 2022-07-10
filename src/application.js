@@ -81,8 +81,7 @@ export default () => {
   })
     .then(() => {
       const watchedState = onChange(state, render(elements, i18nextInstance, state));
-      elements.form.addEventListener('submit', (e) => {
-        e.preventDefault();
+      elements.submitButton.addEventListener('click', () => {
         const { value } = elements.input;
         const { loadedLinks } = state.form;
         return validate(value, loadedLinks)
