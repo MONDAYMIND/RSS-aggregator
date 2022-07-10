@@ -18,6 +18,7 @@ const parse = (response, watchedState, url) => {
       description: parsedData.querySelector('description').textContent,
       link: url,
     };
+    watchedState.form.loadedLinks.push(url);
     watchedState.form.loadedFeeds.push(newFeed);
   }
 
@@ -81,7 +82,8 @@ export default () => {
   })
     .then(() => {
       const watchedState = onChange(state, render(elements, i18nextInstance, state));
-      elements.submitButton.addEventListener('click', () => {
+      elements.form.addEventListener('submit', (e) => {
+        e.preventDefault();
         const { value } = elements.input;
         const { loadedLinks } = state.form;
         return validate(value, loadedLinks)
@@ -91,25 +93,10 @@ export default () => {
             return validUrl;
           })
           .then((validUrl) => axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(validUrl)}`))
-          .catch((err) => {
-            watchedState.form.valid = false;
-            watchedState.form.processState = 'failed';
-            watchedState.form.error = err;
-            throw new Error(err);
-          })
-          .then((response) => {
-            if (!response.data.status.content_type.includes('application/rss+xml')) {
-              const error = i18nextInstance.t('notValidRss');
-              watchedState.form.error = error;
-              throw new Error(error);
-            } else {
-              watchedState.form.loadedLinks.push(watchedState.form.value);
-              watchedState.form.valid = true;
-              watchedState.form.error = null;
-              return parse(response, watchedState, watchedState.form.value);
-            }
-          })
+          .then((response) => parse(response, watchedState, watchedState.form.value))
           .then((result) => {
+            watchedState.form.valid = true;
+            watchedState.form.error = null;
             watchedState.form.processState = 'processed';
             return result;
           })
@@ -126,6 +113,15 @@ export default () => {
                 watchedState.uiState.viewedPosts.push(viewedPost);
               });
             });
+          })
+          .catch((err) => {
+            watchedState.form.valid = false;
+            watchedState.form.processState = 'failed';
+            if (err.name === 'TypeError' || err.name === 'NetworkError') {
+              watchedState.form.error = err.name;
+            } else {
+              watchedState.form.error = err;
+            }
           });
       });
     });

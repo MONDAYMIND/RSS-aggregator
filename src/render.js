@@ -84,22 +84,22 @@ const renderErrors = (elements, error, i18nextInstance) => {
     elements.statusParagraph.classList.remove('text-danger');
     elements.input.classList.remove('is-invalid');
   } else {
-    switch (error.message) {
-      case 'Network Error':
-        elements.statusParagraph.classList.add('text-danger');
-        elements.input.removeAttribute('readonly');
-        elements.submitButton.removeAttribute('disabled');
-        elements.statusParagraph.classList.remove('text-success');
-        elements.input.classList.add('is-invalid');
+    elements.statusParagraph.classList.add('text-danger');
+    elements.input.removeAttribute('readonly');
+    elements.submitButton.removeAttribute('disabled');
+    elements.statusParagraph.classList.remove('text-success');
+    elements.input.classList.add('is-invalid');
+
+    switch (error) {
+      case 'TypeError':
+        elements.statusParagraph.textContent = i18nextInstance.t('invalidRss');
+        break;
+
+      case 'NetworkError':
         elements.statusParagraph.textContent = i18nextInstance.t('networkError');
         break;
 
       default:
-        elements.statusParagraph.classList.add('text-danger');
-        elements.input.removeAttribute('readonly');
-        elements.submitButton.removeAttribute('disabled');
-        elements.statusParagraph.classList.remove('text-success');
-        elements.input.classList.add('is-invalid');
         elements.statusParagraph.textContent = error.message;
         break;
     }
