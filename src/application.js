@@ -2,7 +2,7 @@
 import axios from 'axios';
 import i18next from 'i18next';
 import _ from 'lodash';
-import render from './rendering.js';
+import rendering from './rendering.js';
 import validate from './validator.js';
 import resources from './locales/index.js';
 import parser from './parser.js';
@@ -82,7 +82,7 @@ export default () => {
     resources,
   })
     .then(() => {
-      const watchedState = render(elements, i18nextInstance, state);
+      const watchedState = rendering(elements, i18nextInstance, state);
       elements.form.addEventListener('submit', (e) => {
         e.preventDefault();
         const { value } = elements.input;
