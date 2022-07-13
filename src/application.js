@@ -1,48 +1,49 @@
 /* eslint-disable no-param-reassign */
 import axios from 'axios';
 import i18next from 'i18next';
-import onChange from 'on-change';
 import _ from 'lodash';
 import render from './render.js';
 import validate from './validator.js';
 import resources from './locales/index.js';
-import domParser from './domParser.js';
+import parser from './parser.js';
 
-const parse = (response, watchedState, url) => {
-  const parsedData = domParser(response.data.contents);
-  const loadedFeedsUrl = watchedState.form.loadedFeeds.map((feed) => feed.link);
-  if (!loadedFeedsUrl.includes(url)) {
-    const newFeed = {
+const typeError = (error) => {
+  if (error.name === 'TypeError') {
+    return 'Type Error';
+  } if (error.message === 'Network Error') {
+    return 'Network Error';
+  }
+  return error.type;
+};
+
+const processSSr = (response, watchedState, url) => {
+  const { loadedLinks } = watchedState.form;
+  const parsedData = parser(response.data.contents);
+  const { title, description, items } = parsedData;
+  if (!loadedLinks.includes(url)) {
+    const feed = {
+      title,
+      description,
       id: _.uniqueId(),
-      title: parsedData.querySelector('title').textContent,
-      description: parsedData.querySelector('description').textContent,
-      link: url,
     };
     watchedState.form.loadedLinks.push(url);
-    watchedState.form.loadedFeeds.push(newFeed);
+    watchedState.form.loadedFeeds.push(feed);
   }
 
-  const items = parsedData.querySelectorAll('item');
   const loadedPostsLinks = watchedState.form.loadedPosts.map((post) => post.link);
   Array.from(items).map((item) => {
-    const newPost = {
-      id: _.uniqueId(),
-      title: item.querySelector('title').textContent,
-      description: item.querySelector('description').textContent,
-      link: item.querySelector('link').nextSibling.textContent.trim(),
-    };
-    if (!loadedPostsLinks.includes(newPost.link)) {
-      watchedState.form.loadedPosts.push(newPost);
+    if (!loadedPostsLinks.includes(item.link)) {
+      item.id = _.uniqueId();
+      watchedState.form.loadedPosts.push(item);
     }
-    return newPost;
+    return item;
   });
 
+  const interval = 5000;
   setTimeout(() => {
     watchedState.form.loadedLinks.map((loadedLink) => axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(loadedLink)}`)
-      .then((newResponse) => parse(newResponse, watchedState, url)));
-  }, 5000);
-
-  return 'All is rendered';
+      .then((newResponse) => processSSr(newResponse, watchedState, url)));
+  }, interval);
 };
 
 export default () => {
@@ -62,7 +63,7 @@ export default () => {
     form: {
       valid: true,
       processState: 'filling',
-      error: null,
+      error: typeError,
       loadedLinks: [],
       loadedFeeds: [],
       loadedPosts: [],
@@ -81,7 +82,7 @@ export default () => {
     resources,
   })
     .then(() => {
-      const watchedState = onChange(state, render(elements, i18nextInstance, state));
+      const watchedState = render(elements, i18nextInstance, state);
       elements.form.addEventListener('submit', (e) => {
         e.preventDefault();
         const { value } = elements.input;
@@ -93,37 +94,16 @@ export default () => {
             return validUrl;
           })
           .then((validUrl) => axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(validUrl)}`))
-          .then((response) => parse(response, watchedState, watchedState.form.value))
-          .then((result) => {
+          .then((response) => processSSr(response, watchedState, watchedState.form.value))
+          .then(() => {
             watchedState.form.valid = true;
             watchedState.form.error = null;
             watchedState.form.processState = 'processed';
-            return result;
-          })
-          .then(() => {
-            const modalButtons = document.querySelectorAll('[data-bs-toggle="modal"]');
-            modalButtons.forEach((button) => {
-              button.addEventListener('click', (event) => {
-                watchedState.uiState.currentModalId = event.target.dataset.id;
-                const headlingElement = event.target.previousSibling;
-                const viewedPost = {
-                  id: headlingElement.dataset.id,
-                  headlingElement,
-                };
-                watchedState.uiState.viewedPosts.push(viewedPost);
-              });
-            });
           })
           .catch((err) => {
+            watchedState.form.error = typeError(err);
             watchedState.form.valid = false;
             watchedState.form.processState = 'failed';
-            if (err.name === 'TypeError') {
-              watchedState.form.error = 'Type Error';
-            } else if (err.message === 'Network Error') {
-              watchedState.form.error = 'Network Error';
-            } else {
-              watchedState.form.error = err.type;
-            }
           });
       });
     });

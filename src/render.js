@@ -1,4 +1,6 @@
 /* eslint-disable no-param-reassign */
+import onChange from 'on-change';
+
 const renderProcessState = (elements, processState, i18nextInstance) => {
   switch (processState) {
     case 'sending':
@@ -11,7 +13,7 @@ const renderProcessState = (elements, processState, i18nextInstance) => {
       elements.statusParagraph.classList.add('text-success');
       elements.input.removeAttribute('readonly');
       elements.submitButton.removeAttribute('disabled');
-      elements.statusParagraph.textContent = i18nextInstance.t('urlLoaded');
+      elements.statusParagraph.textContent = i18nextInstance.t('loading.urlLoaded');
       elements.form.reset();
       elements.input.focus();
       break;
@@ -25,16 +27,36 @@ const renderProcessState = (elements, processState, i18nextInstance) => {
   }
 };
 
+const renderListGroup = (container, headerText) => {
+  const containerBorder = document.createElement('div');
+  containerBorder.classList.add('card', 'border-0');
+  container.append(containerBorder);
+
+  const containerCardBody = document.createElement('div');
+  containerCardBody.classList.add('card-body');
+  containerBorder.append(containerCardBody);
+
+  const header = document.createElement('h2');
+  header.classList.add('card-title', 'h4');
+  header.textContent = headerText;
+  containerCardBody.append(header);
+
+  const listGroup = document.createElement('ul');
+  listGroup.classList.add('list-group', 'border-0', 'rounded-0');
+  containerBorder.append(listGroup);
+
+  return listGroup;
+};
+
 const renderFeeds = (elements, feeds, i18nextInstance) => {
   elements.feedsContainer.innerHTML = '';
-  elements.feedsContainer.innerHTML = `<div class="card border-0">
-  <div class="card-body"><h2 class="card-title h4">${i18nextInstance.t('feeds')}</h2></div>
-  <ul class="list-group border-0 rounded-0"></ul></div>`;
-  const ulElement = elements.feedsContainer.querySelector('ul');
+  const headerText = `${i18nextInstance.t('feeds')}`;
+  const feedsGroup = renderListGroup(elements.feedsContainer, headerText);
+
   feeds.map((feed) => {
     const liElement = document.createElement('li');
     liElement.classList.add('list-group-item', 'border-0', 'border-end-0');
-    ulElement.append(liElement);
+    feedsGroup.append(liElement);
 
     const headingElement = document.createElement('h3');
     headingElement.classList.add('h6', 'm-0');
@@ -50,77 +72,11 @@ const renderFeeds = (elements, feeds, i18nextInstance) => {
   });
 };
 
-const renderPosts = (elements, posts, i18nextInstance) => {
-  elements.postsContainer.innerHTML = '';
-  elements.postsContainer.innerHTML = `<div class="card border-0">
-    <div class="card-body"><h2 class="card-title h4">${i18nextInstance.t('posts')}</h2></div>
-    <ul class="list-group border-0 rounded-0"></ul></div>`;
-  const ulElement = elements.postsContainer.querySelector('ul');
-  posts.map((post) => {
-    const liElement = document.createElement('li');
-    liElement.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
-    ulElement.append(liElement);
-
-    const linkElement = document.createElement('a');
-    linkElement.classList.add('fw-bold');
-    linkElement.setAttribute('href', post.link);
-    linkElement.setAttribute('data-id', post.id);
-    linkElement.setAttribute('target', '_blank');
-    linkElement.setAttribute('rel', 'noopener noreferrer');
-    linkElement.textContent = post.title;
-    liElement.append(linkElement);
-
-    const button = document.createElement('button');
-    button.classList.add('btn', 'btn-outline-primary', 'btn-sm');
-    button.setAttribute('type', 'button');
-    button.setAttribute('data-id', post.id);
-    button.setAttribute('data-bs-toggle', 'modal');
-    button.setAttribute('data-bs-target', '#modal');
-    button.textContent = `${i18nextInstance.t('viewing')}`;
-    liElement.append(button);
-
-    return liElement;
-  });
-};
-
-const renderErrors = (elements, error, i18nextInstance) => {
-  if (error === null) {
-    elements.statusParagraph.classList.remove('text-danger');
-    elements.input.classList.remove('is-invalid');
-  } else {
-    elements.statusParagraph.classList.add('text-danger');
-    elements.input.removeAttribute('readonly');
-    elements.submitButton.removeAttribute('disabled');
-    elements.statusParagraph.classList.remove('text-success');
-    elements.input.classList.add('is-invalid');
-
-    switch (error) {
-      case 'url':
-        elements.statusParagraph.textContent = i18nextInstance.t('invalidUrl');
-        break;
-
-      case 'notOneOf':
-        elements.statusParagraph.textContent = i18nextInstance.t('notOneOf');
-        break;
-
-      case 'Type Error':
-        elements.statusParagraph.textContent = i18nextInstance.t('invalidRss');
-        break;
-
-      case 'Network Error':
-        elements.statusParagraph.textContent = i18nextInstance.t('networkError');
-        break;
-
-      default:
-        throw new Error(`Unknown error type: '${error}'!`);
-    }
-  }
-};
-
 const renderViewedPost = (viewedPosts) => {
   viewedPosts.map((viewedPost) => {
-    viewedPost.headlingElement.classList.add('fw-normal', 'link-secondary');
-    viewedPost.headlingElement.classList.remove('fw-bold');
+    const viewedPostElement = document.querySelector(`[data-id="${viewedPost.id}"]`);
+    viewedPostElement.classList.add('fw-normal', 'link-secondary');
+    viewedPostElement.classList.remove('fw-bold');
     return viewedPost;
   });
 };
@@ -141,35 +97,114 @@ const renderModal = (currentModalId, state) => {
   modalFooterLink.setAttribute('href', link);
 };
 
-const render = (elements, i18nextInstance, state) => (path, value) => {
-  switch (path) {
-    case 'form.processState':
-      renderProcessState(elements, value, i18nextInstance);
-      break;
+const renderPosts = (elements, posts, i18nextInstance, state) => {
+  elements.postsContainer.innerHTML = '';
+  const headerText = `${i18nextInstance.t('posts')}`;
+  const postsGroup = renderListGroup(elements.postsContainer, headerText);
 
-    case 'form.error':
-      renderErrors(elements, value, i18nextInstance);
-      break;
+  posts.map((post) => {
+    const liElement = document.createElement('li');
+    liElement.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
+    postsGroup.append(liElement);
 
-    case 'form.loadedFeeds':
-      renderFeeds(elements, value, i18nextInstance);
-      break;
+    const linkElement = document.createElement('a');
+    linkElement.classList.add('fw-bold');
+    linkElement.setAttribute('href', post.link);
+    linkElement.setAttribute('data-id', post.id);
+    linkElement.setAttribute('target', '_blank');
+    linkElement.setAttribute('rel', 'noopener noreferrer');
+    linkElement.textContent = post.title;
+    liElement.append(linkElement);
+    linkElement.addEventListener('click', (event) => {
+      const currentElement = event.target;
+      const viewedPost = {
+        id: currentElement.dataset.id,
+      };
+      state.uiState.viewedPosts.push(viewedPost);
+      renderViewedPost(state.uiState.viewedPosts);
+    });
 
-    case 'form.loadedPosts':
-      renderPosts(elements, value, i18nextInstance);
-      break;
+    const button = document.createElement('button');
+    button.classList.add('btn', 'btn-outline-primary', 'btn-sm');
+    button.setAttribute('type', 'button');
+    button.setAttribute('data-id', post.id);
+    button.setAttribute('data-bs-toggle', 'modal');
+    button.setAttribute('data-bs-target', '#modal');
+    button.textContent = `${i18nextInstance.t('viewing')}`;
+    liElement.append(button);
+    button.addEventListener('click', (event) => {
+      state.uiState.currentModalId = event.target.dataset.id;
+      renderModal(state.uiState.currentModalId, state);
+      const headlingElement = event.target.previousSibling;
+      const viewedPost = {
+        id: headlingElement.dataset.id,
+      };
+      state.uiState.viewedPosts.push(viewedPost);
+      renderViewedPost(state.uiState.viewedPosts);
+    });
+    return liElement;
+  });
+  renderViewedPost(state.uiState.viewedPosts);
+};
 
-    case 'uiState.viewedPosts':
-      renderViewedPost(value);
-      break;
+const renderErrors = (elements, error, i18nextInstance) => {
+  if (error === null) {
+    elements.statusParagraph.classList.remove('text-danger');
+    elements.input.classList.remove('is-invalid');
+  } else {
+    elements.statusParagraph.classList.add('text-danger');
+    elements.input.removeAttribute('readonly');
+    elements.submitButton.removeAttribute('disabled');
+    elements.statusParagraph.classList.remove('text-success');
+    elements.input.classList.add('is-invalid');
 
-    case 'uiState.currentModalId':
-      renderModal(value, state);
-      break;
+    switch (error) {
+      case 'url':
+        elements.statusParagraph.textContent = i18nextInstance.t('errors.invalidUrl');
+        break;
 
-    default:
-      break;
+      case 'notOneOf':
+        elements.statusParagraph.textContent = i18nextInstance.t('errors.notOneOf');
+        break;
+
+      case 'Type Error':
+        elements.statusParagraph.textContent = i18nextInstance.t('errors.invalidRss');
+        break;
+
+      case 'Network Error':
+        elements.statusParagraph.textContent = i18nextInstance.t('errors.networkError');
+        break;
+
+      default:
+        throw new Error(`Unknown error type: '${error}'!`);
+    }
   }
+};
+
+const render = (elements, i18nextInstance, state) => {
+  const watchedState = onChange(state, (path, value) => {
+    switch (path) {
+      case 'form.processState':
+        renderProcessState(elements, value, i18nextInstance);
+        break;
+
+      case 'form.error':
+        renderErrors(elements, value, i18nextInstance);
+        break;
+
+      case 'form.loadedFeeds':
+        renderFeeds(elements, value, i18nextInstance);
+        break;
+
+      case 'form.loadedPosts':
+        renderPosts(elements, value, i18nextInstance, state);
+        break;
+
+      default:
+        break;
+    }
+  });
+  return watchedState;
 };
 
 export default render;
