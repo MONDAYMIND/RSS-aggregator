@@ -1,6 +1,4 @@
 /* eslint-disable no-param-reassign */
-import onChange from 'on-change';
-
 const renderProcessState = (elements, processState, i18nextInstance) => {
   switch (processState) {
     case 'sending':
@@ -72,29 +70,13 @@ const renderFeeds = (elements, feeds, i18nextInstance) => {
   });
 };
 
-const renderViewedPost = (viewedPosts) => {
-  viewedPosts.map((viewedPost) => {
-    const viewedPostElement = document.querySelector(`[data-id="${viewedPost.id}"]`);
+const renderViewedPost = (viewedPostsIds) => {
+  viewedPostsIds.map((viewedPostId) => {
+    const viewedPostElement = document.querySelector(`[data-id="${viewedPostId}"]`);
     viewedPostElement.classList.add('fw-normal', 'link-secondary');
     viewedPostElement.classList.remove('fw-bold');
-    return viewedPost;
+    return viewedPostId;
   });
-};
-
-const renderModal = (currentModalId, state) => {
-  const [currentPost] = state.form.loadedPosts
-    .filter((loadedPost) => loadedPost.id === currentModalId);
-  const { title } = currentPost;
-  const { description } = currentPost;
-  const { link } = currentPost;
-
-  const modalTitle = document.querySelector('.modal-title');
-  modalTitle.textContent = title;
-  const modalBody = document.querySelector('.modal-body');
-  modalBody.textContent = description;
-  const modalFooter = document.querySelector('.modal-footer');
-  const modalFooterLink = modalFooter.querySelector('a');
-  modalFooterLink.setAttribute('href', link);
 };
 
 const renderPosts = (elements, posts, i18nextInstance, state) => {
@@ -115,14 +97,6 @@ const renderPosts = (elements, posts, i18nextInstance, state) => {
     linkElement.setAttribute('rel', 'noopener noreferrer');
     linkElement.textContent = post.title;
     liElement.append(linkElement);
-    linkElement.addEventListener('click', (event) => {
-      const currentElement = event.target;
-      const viewedPost = {
-        id: currentElement.dataset.id,
-      };
-      state.uiState.viewedPosts.push(viewedPost);
-      renderViewedPost(state.uiState.viewedPosts);
-    });
 
     const button = document.createElement('button');
     button.classList.add('btn', 'btn-outline-primary', 'btn-sm');
@@ -132,19 +106,26 @@ const renderPosts = (elements, posts, i18nextInstance, state) => {
     button.setAttribute('data-bs-target', '#modal');
     button.textContent = `${i18nextInstance.t('viewing')}`;
     liElement.append(button);
-    button.addEventListener('click', (event) => {
-      state.uiState.currentModalId = event.target.dataset.id;
-      renderModal(state.uiState.currentModalId, state);
-      const headlingElement = event.target.previousSibling;
-      const viewedPost = {
-        id: headlingElement.dataset.id,
-      };
-      state.uiState.viewedPosts.push(viewedPost);
-      renderViewedPost(state.uiState.viewedPosts);
-    });
+
     return liElement;
   });
-  renderViewedPost(state.uiState.viewedPosts);
+  renderViewedPost(state.uiState.viewedPostsIds);
+};
+
+const renderModal = (currentModalId, state) => {
+  const [currentPost] = state.form.loadedPosts
+    .filter((loadedPost) => loadedPost.id === currentModalId);
+  const { title } = currentPost;
+  const { description } = currentPost;
+  const { link } = currentPost;
+
+  const modalTitle = document.querySelector('.modal-title');
+  modalTitle.textContent = title;
+  const modalBody = document.querySelector('.modal-body');
+  modalBody.textContent = description;
+  const modalFooter = document.querySelector('.modal-footer');
+  const modalFooterLink = modalFooter.querySelector('a');
+  modalFooterLink.setAttribute('href', link);
 };
 
 const renderErrors = (elements, error, i18nextInstance) => {
@@ -181,30 +162,35 @@ const renderErrors = (elements, error, i18nextInstance) => {
   }
 };
 
-const render = (elements, i18nextInstance, state) => {
-  const watchedState = onChange(state, (path, value) => {
-    switch (path) {
-      case 'form.processState':
-        renderProcessState(elements, value, i18nextInstance);
-        break;
+const view = (elements, i18nextInstance, state) => (path, value) => {
+  switch (path) {
+    case 'form.processState':
+      renderProcessState(elements, value, i18nextInstance);
+      break;
 
-      case 'form.error':
-        renderErrors(elements, value, i18nextInstance);
-        break;
+    case 'form.error':
+      renderErrors(elements, value, i18nextInstance);
+      break;
 
-      case 'form.loadedFeeds':
-        renderFeeds(elements, value, i18nextInstance);
-        break;
+    case 'form.loadedFeeds':
+      renderFeeds(elements, value, i18nextInstance);
+      break;
 
-      case 'form.loadedPosts':
-        renderPosts(elements, value, i18nextInstance, state);
-        break;
+    case 'form.loadedPosts':
+      renderPosts(elements, value, i18nextInstance, state);
+      break;
 
-      default:
-        break;
-    }
-  });
-  return watchedState;
+    case 'uiState.viewedPostsIds':
+      renderViewedPost(value);
+      break;
+
+    case 'uiState.currentModalId':
+      renderModal(value, state);
+      break;
+
+    default:
+      break;
+  }
 };
 
-export default render;
+export default view;

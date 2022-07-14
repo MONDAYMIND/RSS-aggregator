@@ -2,6 +2,7 @@
 import axios from 'axios';
 import i18next from 'i18next';
 import _ from 'lodash';
+import onChange from 'on-change';
 import view from './view.js';
 import validate from './validator.js';
 import resources from './locales/index.js';
@@ -70,7 +71,7 @@ export default () => {
       value: null,
     },
     uiState: {
-      viewedPosts: [],
+      viewedPostsIds: [],
       currentModalId: null,
     },
   };
@@ -82,7 +83,7 @@ export default () => {
     resources,
   })
     .then(() => {
-      const watchedState = view(elements, i18nextInstance, state);
+      const watchedState = onChange(state, view(elements, i18nextInstance, state));
       elements.form.addEventListener('submit', (e) => {
         e.preventDefault();
         const { value } = elements.input;
@@ -91,9 +92,8 @@ export default () => {
           .then((validUrl) => {
             watchedState.form.value = validUrl;
             watchedState.form.processState = 'sending';
-            return validUrl;
+            return axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(validUrl)}`);
           })
-          .then((validUrl) => axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(validUrl)}`))
           .then((response) => processSSr(response, watchedState, watchedState.form.value))
           .then(() => {
             watchedState.form.valid = true;
@@ -105,6 +105,16 @@ export default () => {
             watchedState.form.valid = false;
             watchedState.form.processState = 'failed';
           });
+      });
+      elements.postsContainer.addEventListener('click', (event) => {
+        if (!event.target.matches('[data-id]')) {
+          return;
+        }
+        watchedState.uiState.currentModalId = event.target.dataset.id;
+        const viewedPostId = event.target.dataset.id;
+        if (!watchedState.uiState.viewedPostsIds.includes(viewedPostId)) {
+          watchedState.uiState.viewedPostsIds.push(viewedPostId);
+        }
       });
     });
 };
