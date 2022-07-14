@@ -27,7 +27,7 @@ const renderProcessState = (elements, processState, i18nextInstance) => {
   }
 };
 
-const renderListGroup = (container, headerText) => {
+const viewListGroup = (container, headerText) => {
   const containerBorder = document.createElement('div');
   containerBorder.classList.add('card', 'border-0');
   container.append(containerBorder);
@@ -51,7 +51,7 @@ const renderListGroup = (container, headerText) => {
 const renderFeeds = (elements, feeds, i18nextInstance) => {
   elements.feedsContainer.innerHTML = '';
   const headerText = `${i18nextInstance.t('feeds')}`;
-  const feedsGroup = renderListGroup(elements.feedsContainer, headerText);
+  const feedsGroup = viewListGroup(elements.feedsContainer, headerText);
 
   feeds.map((feed) => {
     const liElement = document.createElement('li');
@@ -100,7 +100,7 @@ const renderModal = (currentModalId, state) => {
 const renderPosts = (elements, posts, i18nextInstance, state) => {
   elements.postsContainer.innerHTML = '';
   const headerText = `${i18nextInstance.t('posts')}`;
-  const postsGroup = renderListGroup(elements.postsContainer, headerText);
+  const postsGroup = viewListGroup(elements.postsContainer, headerText);
 
   posts.map((post) => {
     const liElement = document.createElement('li');
