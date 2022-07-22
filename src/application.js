@@ -13,38 +13,46 @@ const typeError = (error) => {
     return 'Type Error';
   } if (error.message === 'Network Error') {
     return 'Network Error';
+  } if (error.isParsingError) {
+    return 'Parser Error';
   }
   return error.type;
 };
 
-const processSSr = (response, watchedState, url) => {
+const fetchNewPosts = (watchedState) => {
   const { loadedLinks } = watchedState.form;
+  const loadedPostsLinks = watchedState.form.loadedPosts.map((post) => post.link);
+  const responsePromises = loadedLinks.map((link) => axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(link)}`));
+  Promise.all(responsePromises).then((responses) => {
+    responses.map((response) => {
+      const { items } = parser(response.data.contents);
+      return Array.from(items).map((item) => {
+        if (!loadedPostsLinks.includes(item.link)) {
+          item.id = _.uniqueId();
+          watchedState.form.loadedPosts.push(item);
+        }
+        return item;
+      });
+    });
+  })
+    .then(() => setTimeout(() => fetchNewPosts(watchedState), 5000));
+};
+
+const processSSr = (response, watchedState, url) => {
   const parsedData = parser(response.data.contents);
   const { title, description, items } = parsedData;
-  if (!loadedLinks.includes(url)) {
-    const feed = {
-      title,
-      description,
-      id: _.uniqueId(),
-    };
-    watchedState.form.loadedLinks.push(url);
-    watchedState.form.loadedFeeds.push(feed);
-  }
-
-  const loadedPostsLinks = watchedState.form.loadedPosts.map((post) => post.link);
+  const feed = {
+    title,
+    description,
+    id: _.uniqueId(),
+  };
+  watchedState.form.loadedLinks.push(url);
+  watchedState.form.loadedFeeds.push(feed);
   Array.from(items).map((item) => {
-    if (!loadedPostsLinks.includes(item.link)) {
-      item.id = _.uniqueId();
-      watchedState.form.loadedPosts.push(item);
-    }
+    item.id = _.uniqueId();
+    watchedState.form.loadedPosts.push(item);
     return item;
   });
-
-  const interval = 5000;
-  setTimeout(() => {
-    watchedState.form.loadedLinks.map((loadedLink) => axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(loadedLink)}`)
-      .then((newResponse) => processSSr(newResponse, watchedState, url)));
-  }, interval);
 };
 
 export default () => {
@@ -90,13 +98,13 @@ export default () => {
         const { loadedLinks } = state.form;
         return validate(value, loadedLinks)
           .then((validUrl) => {
+            watchedState.form.valid = true;
             watchedState.form.value = validUrl;
             watchedState.form.processState = 'sending';
             return axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(validUrl)}`);
           })
           .then((response) => processSSr(response, watchedState, watchedState.form.value))
           .then(() => {
-            watchedState.form.valid = true;
             watchedState.form.error = null;
             watchedState.form.processState = 'processed';
           })
@@ -116,5 +124,6 @@ export default () => {
           watchedState.uiState.viewedPostsIds.push(viewedPostId);
         }
       });
+      setTimeout(() => fetchNewPosts(watchedState), 5000);
     });
 };

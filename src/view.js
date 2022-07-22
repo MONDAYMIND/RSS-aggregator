@@ -148,12 +148,12 @@ const renderErrors = (elements, error, i18nextInstance) => {
         elements.statusParagraph.textContent = i18nextInstance.t('errors.notOneOf');
         break;
 
-      case 'Type Error':
-        elements.statusParagraph.textContent = i18nextInstance.t('errors.invalidRss');
-        break;
-
       case 'Network Error':
         elements.statusParagraph.textContent = i18nextInstance.t('errors.networkError');
+        break;
+
+      case 'Parser Error':
+        elements.statusParagraph.textContent = i18nextInstance.t('errors.parserError');
         break;
 
       default:
