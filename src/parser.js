@@ -13,13 +13,13 @@ export default (rssFlow) => {
     items: [],
   };
   const items = parsedData.querySelectorAll('item');
-  Array.from(items).map((item) => {
+  Array.from(items).forEach((item) => {
     const newPost = {
       title: item.querySelector('title').textContent,
       description: item.querySelector('description').textContent,
       link: item.querySelector('link').textContent.trim(),
     };
-    return newFeed.items.push(newPost);
+    newFeed.items.push(newPost);
   });
   return newFeed;
 };

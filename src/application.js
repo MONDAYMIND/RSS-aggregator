@@ -24,14 +24,13 @@ const fetchNewPosts = (watchedState) => {
   const loadedPostsLinks = watchedState.form.loadedPosts.map((post) => post.link);
   const responsePromises = loadedLinks.map((link) => axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(link)}`));
   Promise.all(responsePromises).then((responses) => {
-    responses.map((response) => {
+    responses.forEach((response) => {
       const { items } = parser(response.data.contents);
-      return Array.from(items).map((item) => {
+      Array.from(items).forEach((item) => {
         if (!loadedPostsLinks.includes(item.link)) {
           item.id = _.uniqueId();
           watchedState.form.loadedPosts.push(item);
         }
-        return item;
       });
     });
   })
@@ -40,6 +39,7 @@ const fetchNewPosts = (watchedState) => {
 
 const processSSr = (response, watchedState, url) => {
   const parsedData = parser(response.data.contents);
+  watchedState.form.error = null;
   const { title, description, items } = parsedData;
   const feed = {
     title,
@@ -48,11 +48,12 @@ const processSSr = (response, watchedState, url) => {
   };
   watchedState.form.loadedLinks.push(url);
   watchedState.form.loadedFeeds.push(feed);
-  Array.from(items).map((item) => {
+  Array.from(items).forEach((item) => {
     item.id = _.uniqueId();
     watchedState.form.loadedPosts.push(item);
-    return item;
   });
+
+  watchedState.form.processState = 'processed';
 };
 
 export default () => {
@@ -104,10 +105,6 @@ export default () => {
             return axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(validUrl)}`);
           })
           .then((response) => processSSr(response, watchedState, watchedState.form.value))
-          .then(() => {
-            watchedState.form.error = null;
-            watchedState.form.processState = 'processed';
-          })
           .catch((err) => {
             watchedState.form.error = typeError(err);
             watchedState.form.valid = false;

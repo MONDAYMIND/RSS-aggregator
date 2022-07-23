@@ -51,7 +51,7 @@ const renderFeeds = (elements, feeds, i18nextInstance) => {
   const headerText = `${i18nextInstance.t('feeds')}`;
   const feedsGroup = viewListGroup(elements.feedsContainer, headerText);
 
-  feeds.map((feed) => {
+  feeds.forEach((feed) => {
     const liElement = document.createElement('li');
     liElement.classList.add('list-group-item', 'border-0', 'border-end-0');
     feedsGroup.append(liElement);
@@ -65,17 +65,14 @@ const renderFeeds = (elements, feeds, i18nextInstance) => {
     paragraphElement.classList.add('m-0', 'small', 'text-black-50');
     paragraphElement.textContent = feed.description;
     liElement.append(paragraphElement);
-
-    return liElement;
   });
 };
 
 const renderViewedPost = (viewedPostsIds) => {
-  viewedPostsIds.map((viewedPostId) => {
+  viewedPostsIds.forEach((viewedPostId) => {
     const viewedPostElement = document.querySelector(`[data-id="${viewedPostId}"]`);
     viewedPostElement.classList.add('fw-normal', 'link-secondary');
     viewedPostElement.classList.remove('fw-bold');
-    return viewedPostId;
   });
 };
 
@@ -84,7 +81,7 @@ const renderPosts = (elements, posts, i18nextInstance, state) => {
   const headerText = `${i18nextInstance.t('posts')}`;
   const postsGroup = viewListGroup(elements.postsContainer, headerText);
 
-  posts.map((post) => {
+  posts.forEach((post) => {
     const liElement = document.createElement('li');
     liElement.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
     postsGroup.append(liElement);
@@ -106,8 +103,6 @@ const renderPosts = (elements, posts, i18nextInstance, state) => {
     button.setAttribute('data-bs-target', '#modal');
     button.textContent = `${i18nextInstance.t('viewing')}`;
     liElement.append(button);
-
-    return liElement;
   });
   renderViewedPost(state.uiState.viewedPostsIds);
 };
